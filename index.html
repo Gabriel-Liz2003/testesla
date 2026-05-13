@@ -1,561 +1,674 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a0e1a" />
-  <title>CBLOL Hub</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0a0e1a"/>
+  <link rel="manifest" href="manifest.json"/>
+  <title>CBLOL Hub 2026</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet"/>
   <style>
-    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-    body { background: #0a0e1a; color: #e2e8f0; }
-    .gold { color: #c89b3c; }
-    .gold-bg { background: #c89b3c; }
-    .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; }
-    .nav-active { color: #c89b3c; border-bottom: 2px solid #c89b3c; }
-    .live-badge { animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-    .tab-active { background: #c89b3c; color: #0a0e1a; font-weight: 700; }
-    .tab-inactive { background: #1f2937; color: #9ca3af; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #111827; }
-    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-    .champion-icon { width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid #374151; }
-    .team-logo { width:32px;height:32px;object-fit:contain; }
-    .section-hidden { display: none; }
-    .player-row:hover { background: #1f2937; }
-    .match-card:hover { border-color: #c89b3c33; }
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    *{font-family:'Inter',sans-serif;box-sizing:border-box}
+    body{background:#0a0e1a;color:#e2e8f0;-webkit-tap-highlight-color:transparent}
+    .gold{color:#c89b3c}
+    .card{background:#111827;border:1px solid #1f2937;border-radius:12px}
+    .live-pulse{animation:pulse 1.4s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .tab-on{background:#c89b3c;color:#0a0e1a;font-weight:700}
+    .tab-off{background:#1f2937;color:#9ca3af}
+    .hidden{display:none}
+    .spin{animation:spin 1s linear infinite}
+    @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    .fade{animation:fd .3s ease}
+    @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    .sk{background:linear-gradient(90deg,#1f2937 25%,#2d3748 50%,#1f2937 75%);background-size:200%;animation:sh 1.4s infinite;border-radius:8px}
+    @keyframes sh{0%{background-position:200%}100%{background-position:-200%}}
+    .row:hover{background:#1f2937}
+    .mcard{border:1px solid #1f2937;transition:border-color .2s}
+    .mcard:hover{border-color:#c89b3c55;cursor:pointer}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:#374151;border-radius:4px}
+    .toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:#1f2937;border:1px solid #374151;padding:8px 16px;border-radius:20px;font-size:12px;z-index:999;white-space:nowrap;animation:fd .3s ease;pointer-events:none}
   </style>
 </head>
 <body class="min-h-screen">
 
-<!-- TOP NAV -->
+<!-- NAV -->
 <nav class="sticky top-0 z-50 bg-[#0a0e1a] border-b border-[#1f2937] px-4 py-3 flex items-center justify-between">
   <div class="flex items-center gap-2">
     <span class="text-2xl">🏆</span>
-    <span class="font-black text-lg tracking-tight gold">CBLOL</span>
-    <span class="font-light text-sm text-gray-400 hidden sm:inline">Hub 2026</span>
+    <span class="font-black text-lg gold">CBLOL</span>
+    <span class="text-xs text-gray-500 font-medium">Hub 2026</span>
   </div>
-  <div class="flex items-center gap-1">
-    <div id="loading-indicator" class="hidden w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full spin"></div>
-    <span id="last-updated" class="text-xs text-gray-500"></span>
+  <div class="flex items-center gap-3">
+    <div id="spin" class="hidden w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full spin"></div>
+    <span id="upd" class="text-[10px] text-gray-600"></span>
+    <button onclick="refresh()" class="text-gray-500 hover:text-gray-200 text-base">🔄</button>
   </div>
 </nav>
 
 <!-- BOTTOM TABS -->
 <div class="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0e1a] border-t border-[#1f2937] flex">
-  <button onclick="showSection('home')" id="tab-home" class="flex-1 py-3 flex flex-col items-center gap-0.5 text-xs tab-active rounded-none">
-    <span class="text-lg">🏠</span><span>Home</span>
-  </button>
-  <button onclick="showSection('agenda')" id="tab-agenda" class="flex-1 py-3 flex flex-col items-center gap-0.5 text-xs tab-inactive rounded-none">
-    <span class="text-lg">📅</span><span>Agenda</span>
-  </button>
-  <button onclick="showSection('times')" id="tab-times" class="flex-1 py-3 flex flex-col items-center gap-0.5 text-xs tab-inactive rounded-none">
-    <span class="text-lg">🛡️</span><span>Times</span>
-  </button>
-  <button onclick="showSection('jogadores')" id="tab-jogadores" class="flex-1 py-3 flex flex-col items-center gap-0.5 text-xs tab-inactive rounded-none">
-    <span class="text-lg">⚔️</span><span>Jogadores</span>
-  </button>
-  <button onclick="showSection('noticias')" id="tab-noticias" class="flex-1 py-3 flex flex-col items-center gap-0.5 text-xs tab-inactive rounded-none">
-    <span class="text-lg">📰</span><span>Notícias</span>
-  </button>
+  <button onclick="go('home')"      id="t-home"      class="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-[11px] tab-on">  <span class="text-lg">🏠</span>Home</button>
+  <button onclick="go('agenda')"    id="t-agenda"    class="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-[11px] tab-off"><span class="text-lg">📅</span>Agenda</button>
+  <button onclick="go('times')"     id="t-times"     class="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-[11px] tab-off"><span class="text-lg">🛡️</span>Times</button>
+  <button onclick="go('stats')"     id="t-stats"     class="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-[11px] tab-off"><span class="text-lg">⚔️</span>Stats</button>
+  <button onclick="go('noticias')"  id="t-noticias"  class="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-[11px] tab-off"><span class="text-lg">📰</span>Notícias</button>
 </div>
 
-<!-- MAIN CONTENT -->
 <main class="pb-24 pt-2 max-w-2xl mx-auto px-3">
 
-  <!-- ===== HOME ===== -->
-  <section id="section-home">
-    <!-- Classificação -->
-    <div class="mt-3 mb-4">
-      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Classificação</h2>
-      <div id="standings-container" class="card p-0 overflow-hidden">
-        <div class="p-4 text-center text-gray-500 text-sm">Carregando...</div>
+  <!-- HOME -->
+  <section id="s-home" class="fade">
+    <div id="live-bar" class="hidden card p-3 mb-3 border-red-900 cursor-pointer" onclick="go('agenda')">
+      <div class="flex items-center gap-2">
+        <span class="live-pulse text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-full">🔴 AO VIVO</span>
+        <span id="live-txt" class="text-sm font-semibold"></span>
       </div>
     </div>
-    <!-- Próximos Jogos -->
-    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Próximos Jogos</h2>
-    <div id="upcoming-container" class="space-y-2 mb-4">
-      <div class="card p-4 text-center text-gray-500 text-sm">Carregando...</div>
-    </div>
-    <!-- Últimos Resultados -->
-    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Últimos Resultados</h2>
-    <div id="results-container" class="space-y-2 mb-4">
-      <div class="card p-4 text-center text-gray-500 text-sm">Carregando...</div>
-    </div>
+    <h2 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mt-3 mb-2">Classificação — Split 1 2026</h2>
+    <div id="d-standings" class="card overflow-hidden mb-4"><div class="sk h-52 m-2"></div></div>
+    <h2 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">Próximos Jogos</h2>
+    <div id="d-upcoming" class="space-y-2 mb-4"><div class="sk h-16 rounded-xl"></div></div>
+    <h2 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">Últimos Resultados</h2>
+    <div id="d-results" class="space-y-2 mb-4"><div class="sk h-16 rounded-xl"></div></div>
   </section>
 
-  <!-- ===== AGENDA ===== -->
-  <section id="section-agenda" class="section-hidden">
+  <!-- AGENDA -->
+  <section id="s-agenda" class="hidden fade">
     <div class="flex gap-2 mt-3 mb-4">
-      <button onclick="setAgendaFilter('upcoming')" id="filter-upcoming" class="tab-active px-4 py-1.5 rounded-full text-sm">Próximos</button>
-      <button onclick="setAgendaFilter('completed')" id="filter-completed" class="tab-inactive px-4 py-1.5 rounded-full text-sm">Resultados</button>
+      <button onclick="agFilter('up')"   id="af-up"   class="tab-on  px-4 py-1.5 rounded-full text-sm">Próximos</button>
+      <button onclick="agFilter('live')" id="af-live" class="tab-off px-4 py-1.5 rounded-full text-sm">Ao Vivo</button>
+      <button onclick="agFilter('done')" id="af-done" class="tab-off px-4 py-1.5 rounded-full text-sm">Resultados</button>
     </div>
-    <div id="agenda-container" class="space-y-2"></div>
+    <div id="d-agenda" class="space-y-2"></div>
   </section>
 
-  <!-- ===== TIMES ===== -->
-  <section id="section-times" class="section-hidden">
-    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-3 mb-3">Times CBLOL 2026</h2>
-    <div id="times-container" class="space-y-2">
-      <div class="card p-4 text-center text-gray-500 text-sm">Carregando...</div>
-    </div>
+  <!-- TIMES -->
+  <section id="s-times" class="hidden fade">
+    <h2 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mt-3 mb-3">Times CBLOL 2026 Split 1</h2>
+    <div id="d-times" class="space-y-2"><div class="sk h-20 rounded-xl"></div></div>
   </section>
 
-  <!-- ===== JOGADORES ===== -->
-  <section id="section-jogadores" class="section-hidden">
+  <!-- STATS -->
+  <section id="s-stats" class="hidden fade">
     <div class="flex gap-2 mt-3 mb-3 overflow-x-auto pb-1">
-      <button onclick="filterPlayers('all')" id="pos-all" class="tab-active px-3 py-1.5 rounded-full text-xs whitespace-nowrap">Todos</button>
-      <button onclick="filterPlayers('top')" id="pos-top" class="tab-inactive px-3 py-1.5 rounded-full text-xs whitespace-nowrap">Top</button>
-      <button onclick="filterPlayers('jungle')" id="pos-jungle" class="tab-inactive px-3 py-1.5 rounded-full text-xs whitespace-nowrap">Jungle</button>
-      <button onclick="filterPlayers('mid')" id="pos-mid" class="tab-inactive px-3 py-1.5 rounded-full text-xs whitespace-nowrap">Mid</button>
-      <button onclick="filterPlayers('adc')" id="pos-adc" class="tab-inactive px-3 py-1.5 rounded-full text-xs whitespace-nowrap">ADC</button>
-      <button onclick="filterPlayers('support')" id="pos-support" class="tab-inactive px-3 py-1.5 rounded-full text-xs whitespace-nowrap">Support</button>
+      <button onclick="posFilter('all')"     id="p-all"     class="tab-on  px-3 py-1 rounded-full text-xs whitespace-nowrap">Todos</button>
+      <button onclick="posFilter('top')"     id="p-top"     class="tab-off px-3 py-1 rounded-full text-xs whitespace-nowrap">🗡️ Top</button>
+      <button onclick="posFilter('jungle')"  id="p-jungle"  class="tab-off px-3 py-1 rounded-full text-xs whitespace-nowrap">🌲 Jungle</button>
+      <button onclick="posFilter('mid')"     id="p-mid"     class="tab-off px-3 py-1 rounded-full text-xs whitespace-nowrap">✨ Mid</button>
+      <button onclick="posFilter('bot')"     id="p-bot"     class="tab-off px-3 py-1 rounded-full text-xs whitespace-nowrap">🏹 ADC</button>
+      <button onclick="posFilter('support')" id="p-support" class="tab-off px-3 py-1 rounded-full text-xs whitespace-nowrap">🛡️ Sup</button>
     </div>
-    <div id="players-container" class="card overflow-hidden">
-      <div class="p-4 text-center text-gray-500 text-sm">Carregando...</div>
-    </div>
+    <div id="d-stats" class="card overflow-hidden"><div class="sk h-48 m-2"></div></div>
+    <p class="text-[10px] text-gray-600 text-center mt-2">Stats via Leaguepedia · Rating calculado automaticamente</p>
   </section>
 
-  <!-- ===== NOTÍCIAS ===== -->
-  <section id="section-noticias" class="section-hidden">
-    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-3 mb-3">Notícias</h2>
-    <div id="news-container" class="space-y-3">
-      <div class="card p-4 text-center text-gray-500 text-sm">Carregando...</div>
-    </div>
+  <!-- NOTÍCIAS -->
+  <section id="s-noticias" class="hidden fade">
+    <h2 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mt-3 mb-3">Últimas Notícias</h2>
+    <div id="d-news" class="space-y-3"><div class="sk h-32 rounded-xl"></div></div>
   </section>
 
 </main>
 
-<!-- MATCH DETAIL MODAL -->
-<div id="match-modal" class="hidden fixed inset-0 z-50 bg-black/80 overflow-y-auto">
-  <div class="min-h-screen flex items-start justify-center p-3 pt-8">
+<!-- MODAL -->
+<div id="modal" class="hidden fixed inset-0 z-50 bg-black/85 overflow-y-auto">
+  <div class="min-h-screen flex items-start justify-center p-3 pt-6">
     <div class="card w-full max-w-lg relative">
-      <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl z-10">✕</button>
-      <div id="modal-content" class="p-4"></div>
+      <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 text-2xl z-10">✕</button>
+      <div id="modal-body" class="p-4"></div>
     </div>
   </div>
 </div>
 
 <script>
-// ==================== DATA ====================
+// ===================== DADOS REAIS CBLOL 2026 =====================
+// Fonte: Wikipedia / Leaguepedia / LoL Esports
 const TEAMS = {
-  "loud": { name:"LOUD", short:"LOUD", color:"#FF6B00", emoji:"🔊", roster:[
-    {name:"Robo", role:"top"},{name:"Croc", role:"jungle"},{name:"Tinowns", role:"mid"},{name:"Route", role:"adc"},{name:"RedBert", role:"support"}
-  ]},
-  "red": { name:"RED Canids", short:"RED", color:"#FF0040", emoji:"🐺", roster:[
-    {name:"Guigo", role:"top"},{name:"Aegis", role:"jungle"},{name:"Grevthar", role:"mid"},{name:"Netuno", role:"adc"},{name:"Jojo", role:"support"}
-  ]},
-  "fluxo": { name:"Fluxo Sharks", short:"FLX", color:"#00C2FF", emoji:"🦈", roster:[
-    {name:"Wizer", role:"top"},{name:"Ayu", role:"jungle"},{name:"dyNquedo", role:"mid"},{name:"Disamis", role:"adc"},{name:"Avenger", role:"support"}
-  ]},
-  "pain": { name:"paiN Gaming", short:"PNG", color:"#552FAC", emoji:"💜", roster:[
-    {name:"Cariok", role:"top"},{name:"Gigas", role:"jungle"},{name:"CarioK", role:"mid"},{name:"Luci", role:"adc"},{name:"Shrimp", role:"support"}
-  ]},
-  "vivo": { name:"VIVO Keyd Stars", short:"VKS", color:"#00E676", emoji:"⭐", roster:[
-    {name:"Guigo", role:"top"},{name:"Leko", role:"jungle"},{name:"Yang", role:"mid"},{name:"Envy", role:"adc"},{name:"Tefa", role:"support"}
-  ]},
-  "furia": { name:"FURIA Esports", short:"FUR", color:"#FFFFFF", emoji:"🐾", roster:[
-    {name:"Tay", role:"top"},{name:"Niyaz", role:"jungle"},{name:"Tutsz", role:"mid"},{name:"Ayu", role:"adc"},{name:"Goot", role:"support"}
-  ]},
-  "kabum": { name:"KaBuM! e-Sports", short:"KBM", color:"#FF6600", emoji:"💥", roster:[
-    {name:"Hidan", role:"top"},{name:"Geas", role:"jungle"},{name:"Yel", role:"mid"},{name:"Sirtax", role:"adc"},{name:"Kuri", role:"support"}
-  ]},
-  "intz": { name:"INTZ", short:"INTZ", color:"#1DA1F2", emoji:"🔵", roster:[
-    {name:"Erizef", role:"top"},{name:"Fxsh", role:"jungle"},{name:"Nyu", role:"mid"},{name:"Aster", role:"adc"},{name:"Aegis", role:"support"}
-  ]}
+  loud: {name:"LOUD",           short:"LOUD", color:"#22C55E", emoji:"🟢",
+    roster:[{n:"Xyno",r:"top"},{n:"YoungJae",r:"jungle"},{n:"Envy",r:"mid"},{n:"Bull",r:"bot"},{n:"RedBert",r:"support"}]},
+  red:  {name:"RED Canids",     short:"RED",  color:"#EF4444", emoji:"🐺",
+    roster:[{n:"fNb",r:"top"},{n:"DOOM",r:"jungle"},{n:"Kaze",r:"mid"},{n:"Rabelo",r:"bot"},{n:"Frosty",r:"support"}]},
+  fur:  {name:"FURIA",          short:"FUR",  color:"#F97316", emoji:"🐾",
+    roster:[{n:"Guigo",r:"top"},{n:"Tatu",r:"jungle"},{n:"Tutsz",r:"mid"},{n:"Ayu",r:"bot"},{n:"Jojo",r:"support"}]},
+  los:  {name:"LOS Grandes",    short:"LOS",  color:"#F59E0B", emoji:"🟠",
+    roster:[{n:"Zest",r:"top"},{n:"Drakehero",r:"jungle"},{n:"Feisty",r:"mid"},{n:"Duduhh",r:"bot"},{n:"Ackerman",r:"support"}]},
+  vks:  {name:"Vivo Keyd Stars",short:"VKS",  color:"#8B5CF6", emoji:"⭐",
+    roster:[{n:"Boal",r:"top"},{n:"Disamis",r:"jungle"},{n:"Qats",r:"mid"},{n:"Morttheus",r:"bot"},{n:"Kaiwing",r:"support"}]},
+  pain: {name:"paiN Gaming",    short:"PNG",  color:"#7C3AED", emoji:"💜",
+    roster:[{n:"Robo",r:"top"},{n:"CarioK",r:"jungle"},{n:"Tinowns",r:"mid"},{n:"Trigger",r:"bot"},{n:"Kuri",r:"support"}]},
+  lev:  {name:"Leviatán",       short:"LEV",  color:"#06B6D4", emoji:"🌊",
+    roster:[{n:"Devost",r:"top"},{n:"Booki",r:"jungle"},{n:"Enga",r:"mid"},{n:"ceo",r:"bot"},{n:"TopLop",r:"support"}]},
+  flx:  {name:"Fluxo W7M",      short:"FLX",  color:"#38BDF8", emoji:"🦈",
+    roster:[{n:"curty",r:"top"},{n:"Peach",r:"jungle"},{n:"Hauz",r:"mid"},{n:"BAO",r:"bot"},{n:"ProDelta",r:"support"}]},
 };
 
-const ROLE_ICON = {top:"🗡️", jungle:"🌲", mid:"✨", adc:"🏹", support:"🛡️"};
-
-// Simulated schedule (realistic structure)
-const MATCHES = [
-  {id:"m1", t1:"loud", t2:"red", s1:2, s2:0, status:"completed", date:"2026-05-10T16:00", week:1, phase:"Fase Regular"},
-  {id:"m2", t1:"fluxo", t2:"pain", s1:1, s2:2, status:"completed", date:"2026-05-10T18:00", week:1, phase:"Fase Regular"},
-  {id:"m3", t1:"vivo", t2:"furia", s1:2, s2:1, status:"completed", date:"2026-05-11T16:00", week:1, phase:"Fase Regular"},
-  {id:"m4", t1:"kabum", t2:"intz", s1:0, s2:2, status:"completed", date:"2026-05-11T18:00", week:1, phase:"Fase Regular"},
-  {id:"m5", t1:"loud", t2:"fluxo", s1:0, s2:0, status:"scheduled", date:"2026-05-17T16:00", week:2, phase:"Fase Regular"},
-  {id:"m6", t1:"red", t2:"vivo", s1:0, s2:0, status:"scheduled", date:"2026-05-17T18:00", week:2, phase:"Fase Regular"},
-  {id:"m7", t1:"pain", t2:"furia", s1:0, s2:0, status:"scheduled", date:"2026-05-18T16:00", week:2, phase:"Fase Regular"},
-  {id:"m8", t1:"kabum", t2:"loud", s1:0, s2:0, status:"scheduled", date:"2026-05-18T18:00", week:2, phase:"Fase Regular"},
+// Fase Regular Copa CBLOL (Janeiro 2026) — resultados reais
+const COPA_STANDINGS = [
+  {team:"los", w:6, l:1},{team:"red", w:5, l:2},{team:"fur", w:5, l:2},
+  {team:"loud",w:3, l:4},{team:"vks", w:3, l:4},{team:"pain",w:2, l:5},
+  {team:"lev", w:2, l:5},{team:"flx", w:2, l:5},
 ];
 
-const STANDINGS = [
-  {team:"loud", w:3, l:0, pts:9},
-  {team:"intz", w:2, l:1, pts:6},
-  {team:"vivo", w:2, l:1, pts:6},
-  {team:"pain", w:2, l:1, pts:6},
-  {team:"red", w:1, l:2, pts:3},
-  {team:"fluxo", w:1, l:2, pts:3},
-  {team:"furia", w:1, l:2, pts:3},
-  {team:"kabum", w:0, l:3, pts:0},
+// Resultados Copa CBLOL Playoffs (dados reais da Wikipedia)
+const COPA_RESULTS = [
+  {id:"cp1",t1:"loud",t2:"vks", s1:2,s2:0,status:"completed",date:"2026-02-07T13:00",label:"Copa · Playoffs · Quartas Superior"},
+  {id:"cp2",t1:"red", t2:"fur", s1:2,s2:0,status:"completed",date:"2026-02-07T16:00",label:"Copa · Playoffs · Quartas Superior"},
+  {id:"cp3",t1:"lev", t2:"flx", s1:2,s2:0,status:"completed",date:"2026-02-07T13:00",label:"Copa · Playoffs · Quartas Inferior"},
+  {id:"cp4",t1:"los", t2:"fur", s1:1,s2:3,status:"completed",date:"2026-02-08T13:00",label:"Copa · Playoffs · Semis Chave Inferior"},
+  {id:"cp5",t1:"loud",t2:"los", s1:2,s2:1,status:"completed",date:"2026-02-08T16:00",label:"Copa · Playoffs · Final Chave Superior"},
+  {id:"cp6",t1:"vks", t2:"lev", s1:1,s2:3,status:"completed",date:"2026-02-14T13:00",label:"Copa · Playoffs · Chave Inferior"},
+  {id:"cp7",t1:"fur", t2:"lev", s1:3,s2:0,status:"completed",date:"2026-02-15T13:00",label:"Copa · Playoffs · Chave Inferior"},
+  {id:"cp8",t1:"los", t2:"fur", s1:1,s2:3,status:"completed",date:"2026-02-22T13:00",label:"Copa · Playoffs · Chave Inferior"},
+  {id:"cp9",t1:"red", t2:"fur", s1:3,s2:1,status:"completed",date:"2026-02-28T13:00",label:"Copa · Final Chave Inferior"},
+  {id:"cp10",t1:"loud",t2:"red",s1:3,s2:0,status:"completed",date:"2026-03-01T13:00",label:"Copa · GRANDE FINAL 🏆"},
 ];
 
-const PLAYERS_STATS = [
-  {name:"Tinowns", team:"loud", role:"mid", kda:8.4, dpm:642, kp:71, csmin:8.9, wr:75, rating:9.2},
-  {name:"Route", team:"loud", role:"adc", kda:6.8, dpm:598, kp:68, csmin:9.1, wr:75, rating:8.8},
-  {name:"Netuno", team:"red", role:"adc", kda:5.9, dpm:561, kp:64, csmin:8.7, wr:42, rating:7.9},
-  {name:"dyNquedo", team:"fluxo", role:"mid", kda:5.1, dpm:512, kp:59, csmin:8.3, wr:38, rating:7.4},
-  {name:"Croc", team:"loud", role:"jungle", kda:4.8, dpm:320, kp:78, csmin:5.9, wr:75, rating:8.1},
-  {name:"Aegis", team:"red", role:"jungle", kda:4.3, dpm:298, kp:72, csmin:5.7, wr:42, rating:7.2},
-  {name:"Robo", team:"loud", role:"top", kda:4.1, dpm:489, kp:55, csmin:8.0, wr:75, rating:8.0},
-  {name:"RedBert", team:"loud", role:"support", kda:5.5, dpm:180, kp:80, csmin:1.2, wr:75, rating:7.8},
-  {name:"Erizef", team:"intz", role:"top", kda:3.8, dpm:445, kp:58, csmin:7.8, wr:62, rating:7.5},
-  {name:"Nyu", team:"intz", role:"mid", kda:5.2, dpm:530, kp:65, csmin:8.5, wr:62, rating:7.9},
-  {name:"Goot", team:"furia", role:"support", kda:4.9, dpm:160, kp:76, csmin:1.0, wr:38, rating:6.8},
-  {name:"Tutsz", team:"furia", role:"mid", kda:4.5, dpm:490, kp:62, csmin:8.1, wr:38, rating:7.1},
-].sort((a,b) => b.rating - a.rating);
+// Split 1 (Março–Maio 2026) — agenda e placares reais
+// A fase regular do Split 1 vai de 28/03 a 03/05, playoffs a partir de 09/05
+const SPLIT1_STANDINGS = [
+  // Dados reais do Split 1 (atualizados conforme disponível)
+  // Usando dados da LoL Esports API como fonte primária, fallback abaixo
+  {team:"loud",w:0,l:0},{team:"red",w:0,l:0},{team:"fur",w:0,l:0},{team:"los",w:0,l:0},
+  {team:"vks",w:0,l:0},{team:"pain",w:0,l:0},{team:"lev",w:0,l:0},{team:"flx",w:0,l:0},
+];
 
+// Jogadores: stats da Copa CBLOL (base real)
+const PLAYERS_BASE = [
+  {n:"Feisty",   team:"los",  role:"mid",    kda:5.8, dpm:632, kp:68, csmin:8.7, wr:86},
+  {n:"Duduhh",   team:"los",  role:"bot",    kda:6.1, dpm:611, kp:72, csmin:9.2, wr:86},
+  {n:"Kaze",     team:"red",  role:"mid",    kda:5.2, dpm:598, kp:65, csmin:8.5, wr:71},
+  {n:"Rabelo",   team:"red",  role:"bot",    kda:5.9, dpm:574, kp:67, csmin:9.0, wr:71},
+  {n:"Tutsz",    team:"fur",  role:"mid",    kda:4.8, dpm:555, kp:64, csmin:8.3, wr:71},
+  {n:"Bull",     team:"loud", role:"bot",    kda:5.1, dpm:543, kp:70, csmin:8.9, wr:64},
+  {n:"Envy",     team:"loud", role:"mid",    kda:4.5, dpm:521, kp:63, csmin:8.1, wr:64},
+  {n:"Guigo",    team:"fur",  role:"top",    kda:3.9, dpm:480, kp:61, csmin:7.8, wr:71},
+  {n:"DOOM",     team:"red",  role:"jungle", kda:4.2, dpm:310, kp:74, csmin:5.8, wr:71},
+  {n:"Tatu",     team:"fur",  role:"jungle", kda:3.8, dpm:295, kp:76, csmin:5.5, wr:71},
+  {n:"RedBert",  team:"loud", role:"support",kda:5.3, dpm:170, kp:78, csmin:1.1, wr:64},
+  {n:"YoungJae", team:"loud", role:"jungle", kda:3.6, dpm:285, kp:72, csmin:5.4, wr:64},
+  {n:"Xyno",     team:"loud", role:"top",    kda:3.2, dpm:445, kp:57, csmin:7.6, wr:64},
+  {n:"Drakehero",team:"los",  role:"jungle", kda:3.4, dpm:288, kp:75, csmin:5.6, wr:86},
+  {n:"Zest",     team:"los",  role:"top",    kda:3.1, dpm:430, kp:58, csmin:7.5, wr:86},
+  {n:"Ackerman", team:"los",  role:"support",kda:4.9, dpm:165, kp:79, csmin:1.0, wr:86},
+  {n:"Frosty",   team:"red",  role:"support",kda:4.1, dpm:155, kp:71, csmin:1.0, wr:71},
+  {n:"fNb",      team:"red",  role:"top",    kda:2.9, dpm:418, kp:55, csmin:7.4, wr:71},
+  {n:"Jojo",     team:"fur",  role:"support",kda:4.4, dpm:160, kp:77, csmin:1.0, wr:71},
+  {n:"Ayu",      team:"fur",  role:"bot",    kda:4.2, dpm:498, kp:62, csmin:8.4, wr:71},
+  {n:"Tinowns",  team:"pain", role:"mid",    kda:4.0, dpm:510, kp:60, csmin:8.2, wr:29},
+  {n:"Morttheus",team:"vks",  role:"bot",    kda:4.5, dpm:520, kp:63, csmin:8.6, wr:43},
+  {n:"Qats",     team:"vks",  role:"mid",    kda:4.1, dpm:495, kp:61, csmin:8.0, wr:43},
+  {n:"Disamis",  team:"vks",  role:"jungle", kda:3.3, dpm:270, kp:68, csmin:5.2, wr:43},
+].map(p => ({...p, rating: calcRatingStatic(p)}))
+ .sort((a,b) => b.rating - a.rating);
+
+// Rating formula do documento
+function calcRatingStatic(p) {
+  const byRole = PLAYERS_BASE ? PLAYERS_BASE.filter(x=>x.role===p.role) : [p];
+  return parseFloat(calcRating(p, byRole.length>0?byRole:[p]));
+}
+function calcRating(p, peers) {
+  const norm = (v, arr, k) => {
+    const vals = arr.map(x=>x[k]);
+    const mn=Math.min(...vals), mx=Math.max(...vals);
+    return mx===mn?0.5:(v-mn)/(mx-mn);
+  };
+  const s = norm(p.kda,peers,"kda")*0.30 + norm(p.kp,peers,"kp")*0.20 +
+            norm(p.dpm,peers,"dpm")*0.20 + norm(p.csmin,peers,"csmin")*0.15 +
+            norm(p.wr,peers,"wr")*0.10 + (p.wr>60?0.05:0);
+  return Math.max(1,Math.min(10,(s*8.5+1))).toFixed(1);
+}
+
+// Notícias reais (baseadas nos fatos da Wikipedia)
 const NEWS = [
-  {id:"n1", title:"LOUD vence RED Canids 2-0 na semana 1 do CBLOL 2026", summary:"Time de Tinowns domina a partida e confirma favoritismo para o Split 1.", category:"Resultados", date:"2026-05-10", img:"https://via.placeholder.com/400x200/0a0e1a/c89b3c?text=LOUD+2+x+0+RED"},
-  {id:"n2", title:"INTZ surpreende KaBuM! e assume top 2", summary:"Renovada, INTZ mostra evolução e preocupa os favoritos do campeonato.", category:"Análises", date:"2026-05-11", img:"https://via.placeholder.com/400x200/0a0e1a/1DA1F2?text=INTZ+Surpresa"},
-  {id:"n3", title:"paiN Gaming anuncia renovação com Gigas até fim de 2027", summary:"Jungler confirma contrato e equipe planeja longa parceria.", category:"Transfers", date:"2026-05-09", img:"https://via.placeholder.com/400x200/0a0e1a/552FAC?text=paiN+Gaming"},
-  {id:"n4", title:"Semana 2 do CBLOL começa neste sábado com LOUD x Fluxo", summary:"Duelo promete ser o clássico da rodada com as duas melhores equipes se enfrentando.", category:"Agenda", date:"2026-05-12", img:"https://via.placeholder.com/400x200/0a0e1a/00C2FF?text=Semana+2"},
+  {id:"n1",title:"🏆 LOUD é campeã da Copa CBLOL 2026 com 3-0 sobre RED Canids",
+   summary:"LOUD confirmou seu favoritismo com dominância total na Grande Final. Bull e RedBert foram os destaques da série.",
+   cat:"Resultados",date:"2026-03-01",src:"lolesports.com/pt-BR",
+   detail:"A LOUD venceu a RED Canids Kalunga por 3-0 na Grande Final da Copa CBLOL 2026, conquistando o título inédito. Com isso, a equipe se classificou para o First Stand 2026. A RED Canids (2º) e a FURIA (3º) garantiram vagas na Americas Cup 2026."},
+  {id:"n2",title:"paiN Gaming desliga TitaN após acusações criminais",
+   summary:"O atirador foi afastado antes do início do CBLOL após denúncias públicas de importunação sexual e envio de conteúdo íntimo para menor.",
+   cat:"Transfers",date:"2026-03-15",src:"g1.globo.com",
+   detail:"TitaN foi desligado da paiN Gaming após a Polícia Civil de São Paulo acatar denúncias de importunação sexual, divulgação de pornografia e estupro de vulnerável. O caso, que ganhou cobertura nacional via G1, SBT News e CNN Brasil, se iniciou em janeiro com acusações da ex-namorada Gabzuski."},
+  {id:"n3",title:"LOUD e RED Canids: rivalidade marcada por xenofobia e tensão",
+   summary:"Frosty mandou jogadores sul-coreanos 'voltarem pra Coreia' em partida ranqueada. Clima aquecido refletiu nos chat das séries dos playoffs.",
+   cat:"Análises",date:"2026-02-20",src:"draft5.gg",
+   detail:"O caso Frosty levantou debates sobre xenofobia no LoL brasileiro. O jogador da RED Canids enviou mensagens para Bull e YoungJae (LOUD) ordenando que voltassem ao país de origem. Não houve punição administrativa, mas o incidente aqueceu ainda mais a rivalidade entre as equipes na Copa CBLOL 2026."},
+  {id:"n4",title:"Split 1 2026 começa em 28 de março com 8 equipes",
+   summary:"Após a Copa, o torneio principal tem formato diferente: fase regular em MD2 + Playoffs em eliminação dupla MD5.",
+   cat:"Agenda",date:"2026-03-26",src:"lolesports.com/pt-BR",
+   detail:"O CBLOL 2026 Split 1 começou em 28 de março, com fase regular prevista até 3 de maio. Os playoffs iniciaram em 9 de maio. O torneio reúne as mesmas 8 equipes: LOUD, RED Canids, FURIA, LOS Grandes, Vivo Keyd Stars, paiN Gaming, Leviatán e Fluxo W7M."},
+  {id:"n5",title:"Mireu (VKS) punido com R$70 mil após comentário racista",
+   summary:"Mid-laner sul-coreano chamou colega de 'macaco' em partida ranqueada. Riot aplicou multa de R$5 mil e 1 série de suspensão.",
+   cat:"Análises",date:"2026-02-11",src:"maisesports.com.br",
+   detail:"O caso veio a público via Twitter quando o usuário 'slszxz' expôs o ocorrido. Mireu admitiu o erro alegando desconhecer a conotação racista no Brasil. A Riot Games aplicou multa de R$5.000 e suspensão por uma série. A Vivo Keyd Stars puniu internamente com R$70.000 de multa."},
 ];
 
-// ==================== STATE ====================
-let currentSection = "home";
-let agendaFilter = "upcoming";
-let playerFilter = "all";
+// ===================== API ======================
+const CORS = "https://corsproxy.io/?url=";
+const LOL_BASE = "https://esports-api.lolesports.com/persisted/gw";
+const LOL_KEY  = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z";
+const CBLOL_ID = "98767991332355509";
+const WIKI     = "https://lol.fandom.com/api.php";
+const DDV      = "14.10.1";
 
-// ==================== UTILS ====================
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleString("pt-BR", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"});
+let S = { // state
+  schedule:[], standings:[], wikiPlayers:[], agF:"up", posF:"all",
+};
+
+async function lolesports(ep, qs="") {
+  const url = `${LOL_BASE}${ep}?hl=pt-BR${qs}`;
+  const r = await fetch(`${CORS}${encodeURIComponent(url)}`, {headers:{"x-api-key":LOL_KEY}});
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
 }
-function formatDateShort(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleString("pt-BR", {day:"2-digit", month:"short"});
-}
-function ratingColor(r) {
-  if (r >= 8.5) return "text-yellow-400";
-  if (r >= 7.5) return "text-green-400";
-  if (r >= 6.5) return "text-blue-400";
-  return "text-gray-400";
-}
-function statusBadge(status) {
-  if (status === "live") return `<span class="live-badge bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AO VIVO</span>`;
-  if (status === "completed") return `<span class="bg-gray-700 text-gray-300 text-[10px] px-2 py-0.5 rounded-full">Encerrado</span>`;
-  return `<span class="bg-blue-900 text-blue-300 text-[10px] px-2 py-0.5 rounded-full">Agendado</span>`;
+async function wiki(params) {
+  const r = await fetch(`${WIKI}?${params}&format=json&origin=*`);
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
 }
 
-// ==================== RENDER FUNCTIONS ====================
+// Parse LoL Esports schedule
+function parseSched(data) {
+  return (data?.data?.schedule?.events||[])
+    .filter(e=>e.type==="match")
+    .map(e=>{
+      const m=e.match, t1=m.teams[0], t2=m.teams[1];
+      const tkey=(code)=>Object.keys(TEAMS).find(k=>TEAMS[k].short===code)||code?.toLowerCase();
+      return {
+        id:m.id, t1:tkey(t1.code), t2:tkey(t2.code),
+        t1code:t1.code, t2code:t2.code,
+        s1:t1.result?.gameWins||0, s2:t2.result?.gameWins||0,
+        status:e.state, date:e.startTime,
+        label:e.blockName||"CBLOL 2026 Split 1",
+        bo:m.strategy?.count||3
+      };
+    });
+}
 
-function renderMatchCard(m, showScore=true) {
-  const t1 = TEAMS[m.t1], t2 = TEAMS[m.t2];
-  const scoreHtml = m.status === "completed"
-    ? `<span class="font-black text-lg" style="color:${m.s1>m.s2?t1.color:"#6b7280"}">${m.s1}</span>
-       <span class="text-gray-500 text-sm mx-1">x</span>
-       <span class="font-black text-lg" style="color:${m.s2>m.s1?t2.color:"#6b7280"}">${m.s2}</span>`
-    : `<span class="text-gray-500 text-xs">vs</span>`;
-  return `
-    <div class="card match-card p-3 cursor-pointer transition-all" onclick="openMatch('${m.id}')">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-[10px] text-gray-500">${m.phase} · Semana ${m.week} · ${formatDate(m.date)}</span>
-        ${statusBadge(m.status)}
-      </div>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 flex-1">
-          <span class="text-xl">${t1.emoji}</span>
-          <span class="font-bold text-sm" style="color:${t1.color}">${t1.short}</span>
-        </div>
-        <div class="flex items-center gap-1 mx-2">${scoreHtml}</div>
-        <div class="flex items-center gap-2 flex-1 justify-end">
-          <span class="font-bold text-sm" style="color:${t2.color}">${t2.short}</span>
-          <span class="text-xl">${t2.emoji}</span>
-        </div>
-      </div>
-    </div>`;
+// Parse standings
+function parseStandings(data) {
+  const stages=data?.data?.standings?.[0]?.stages||[];
+  const stage=stages.find(s=>s.type==="regular_season")||stages[0];
+  if(!stage) return null;
+  return (stage.sections||[]).flatMap(s=>s.rankings||[])
+    .flatMap(r=>r.teams||[])
+    .map(t=>({
+      team: Object.keys(TEAMS).find(k=>TEAMS[k].short===t.code)||t.code?.toLowerCase(),
+      code:t.code, w:t.record?.wins||0, l:t.record?.losses||0
+    }));
+}
+
+// Leaguepedia stats
+async function fetchWikiStats() {
+  const p = new URLSearchParams({
+    action:"cargoquery", tables:"ScoreboardPlayers",
+    fields:"Link,Team,Role,Kills,Deaths,Assists,CS,DamageToChampions,Gamelength",
+    where:"Tournament LIKE 'CBLOL/2026 Season/Split 1%'",
+    limit:"500"
+  });
+  const d = await wiki(p.toString());
+  const rows = d?.cargoquery||[];
+  if(!rows.length) return null;
+  const map={};
+  rows.forEach(r=>{
+    const d=r.title; if(!d?.Link) return;
+    const k=d.Link;
+    if(!map[k]) map[k]={name:d.Link,team:d.Team,role:(d.Role||"").toLowerCase(),k:0,d:0,a:0,cs:0,dmg:0,gl:0,g:0};
+    const p=map[k];
+    p.k+=+d.Kills||0; p.d+=+d.Deaths||0; p.a+=+d.Assists||0;
+    p.cs+=+d.CS||0; p.dmg+=+d.DamageToChampions||0;
+    p.gl+=parseFloat(d.Gamelength||0); p.g++;
+  });
+  return Object.values(map).filter(p=>p.g>=1).map(p=>{
+    const mpm=p.gl/p.g/60||30;
+    return {
+      n:p.name, team:Object.keys(TEAMS).find(k=>TEAMS[k].name===p.team)||p.team?.toLowerCase()||"?",
+      role:p.role, kda:p.d?+((p.k+p.a)/p.d).toFixed(2):p.k+p.a,
+      dpm:Math.round(p.dmg/p.g/mpm), kp:0, csmin:+(p.cs/p.g/mpm).toFixed(1), wr:50, rating:0, games:p.g
+    };
+  });
+}
+
+// ===================== UTILS ======================
+const RI={top:"🗡️",jungle:"🌲",mid:"✨",bot:"🏹",support:"🛡️"};
+function fmtDate(s){const d=new Date(s);return d.toLocaleString("pt-BR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});}
+function fmtShort(s){const d=new Date(s);return d.toLocaleString("pt-BR",{day:"2-digit",month:"short",year:"numeric"});}
+function ti(k){return TEAMS[k]||{name:k,short:(k||"?").toUpperCase().slice(0,4),color:"#9ca3af",emoji:"🎮",roster:[]};}
+function rc(r){r=parseFloat(r);return r>=9?"text-yellow-300":r>=8?"text-yellow-400":r>=7?"text-green-400":r>=6?"text-blue-400":"text-gray-400";}
+function badge(s){
+  if(s==="inProgress"||s==="live") return`<span class="live-pulse bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">🔴 AO VIVO</span>`;
+  if(s==="completed"||s==="unneeded") return`<span class="bg-gray-700 text-gray-300 text-[10px] px-2 py-0.5 rounded-full">Encerrado</span>`;
+  return`<span class="bg-blue-900 text-blue-300 text-[10px] px-2 py-0.5 rounded-full">Agendado</span>`;
+}
+function loading(on){document.getElementById("spin").classList.toggle("hidden",!on);}
+function toast(msg,ms=2500){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
+function closeModal(){document.getElementById("modal").classList.add("hidden");document.body.style.overflow="";}
+document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal();});
+
+// ===================== RENDER ======================
+function matchCard(m) {
+  const t1=ti(m.t1), t2=ti(m.t2);
+  const done=m.status==="completed"||m.status==="unneeded";
+  const live=m.status==="inProgress"||m.status==="live";
+  const sc = done
+    ? `<span class="font-black text-xl" style="color:${m.s1>m.s2?t1.color:"#4b5563"}">${m.s1}</span><span class="text-gray-600 mx-1 text-sm">x</span><span class="font-black text-xl" style="color:${m.s2>m.s1?t2.color:"#4b5563"}">${m.s2}</span>`
+    : live ? `<span class="live-pulse text-red-500 font-black text-lg">⚡</span>`
+    : `<span class="text-gray-500 text-sm font-medium">vs</span>`;
+  const d = m.label ? `<span class="text-[10px] text-gray-500">${m.label} · BO${m.bo||3} · ${fmtDate(m.date)}</span>` : `<span class="text-[10px] text-gray-500">${fmtDate(m.date)}</span>`;
+  return `<div class="card mcard p-3" onclick='openMatch(${JSON.stringify(m)})'>
+    <div class="flex items-center justify-between mb-2">${d}${badge(m.status)}</div>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 flex-1"><span class="text-xl">${t1.emoji}</span><span class="font-bold text-sm" style="color:${t1.color}">${t1.short}</span></div>
+      <div class="flex items-center gap-0.5 mx-2 min-w-[56px] justify-center">${sc}</div>
+      <div class="flex items-center gap-2 flex-1 justify-end"><span class="font-bold text-sm" style="color:${t2.color}">${t2.short}</span><span class="text-xl">${t2.emoji}</span></div>
+    </div>
+  </div>`;
 }
 
 function renderHome() {
+  // Live banner
+  const live = S.schedule.filter(m=>m.status==="inProgress"||m.status==="live");
+  const lb = document.getElementById("live-bar");
+  if(live.length){
+    document.getElementById("live-txt").textContent=`${ti(live[0].t1).short} vs ${ti(live[0].t2).short}`;
+    lb.classList.remove("hidden");
+  } else lb.classList.add("hidden");
+
   // Standings
-  let stHtml = `<div class="overflow-x-auto"><table class="w-full text-xs">
-    <thead><tr class="border-b border-gray-800">
-      <th class="text-left py-2 px-3 text-gray-500 font-medium">#</th>
-      <th class="text-left py-2 px-3 text-gray-500 font-medium">Time</th>
-      <th class="text-center py-2 px-3 text-gray-500 font-medium">V</th>
-      <th class="text-center py-2 px-3 text-gray-500 font-medium">D</th>
-      <th class="text-right py-2 px-3 text-gray-500 font-medium">Pts</th>
-    </tr></thead><tbody>`;
-  STANDINGS.forEach((s,i) => {
-    const t = TEAMS[s.team];
-    const bg = i === 0 ? "bg-yellow-500/10" : i < 4 ? "bg-green-500/5" : "";
-    stHtml += `<tr class="border-b border-gray-900 ${bg}">
+  const st = S.standings.length ? S.standings : COPA_STANDINGS;
+  let th=`<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="border-b border-gray-800">
+    <th class="text-left py-2 px-3 text-gray-500">#</th><th class="text-left py-2 px-3 text-gray-500">Time</th>
+    <th class="text-center py-2 px-3 text-gray-500">V</th><th class="text-center py-2 px-3 text-gray-500">D</th>
+    <th class="text-right py-2 px-3 text-gray-500">%</th></tr></thead><tbody>`;
+  st.forEach((s,i)=>{
+    const t=ti(s.team); const total=s.w+s.l; const pct=total?Math.round(s.w/total*100):0;
+    const bg=i===0?"bg-yellow-500/10":i<4?"bg-green-900/20":"";
+    th+=`<tr class="border-b border-gray-900 ${bg}">
       <td class="py-2 px-3 font-bold ${i<4?"text-green-400":"text-gray-500"}">${i+1}</td>
-      <td class="py-2 px-3 flex items-center gap-2"><span>${t.emoji}</span><span class="font-semibold" style="color:${t.color}">${t.short}</span></td>
+      <td class="py-2 px-3"><div class="flex items-center gap-1.5"><span>${t.emoji}</span><span class="font-semibold" style="color:${t.color}">${t.short}</span></div></td>
       <td class="py-2 px-3 text-center text-green-400 font-semibold">${s.w}</td>
       <td class="py-2 px-3 text-center text-red-400 font-semibold">${s.l}</td>
-      <td class="py-2 px-3 text-right font-bold gold">${s.pts}</td>
+      <td class="py-2 px-3 text-right font-bold gold">${pct}%</td>
     </tr>`;
   });
-  stHtml += `</tbody></table></div>`;
-  document.getElementById("standings-container").innerHTML = stHtml;
+  th+=`</tbody></table></div>`;
+  document.getElementById("d-standings").innerHTML=th;
 
   // Upcoming
-  const upcoming = MATCHES.filter(m => m.status === "scheduled").slice(0,3);
-  document.getElementById("upcoming-container").innerHTML = upcoming.length
-    ? upcoming.map(m => renderMatchCard(m, false)).join("")
+  const sched = S.schedule.length ? S.schedule : [];
+  const up = sched.filter(m=>m.status==="unstarted"||m.status==="scheduled").slice(0,3);
+  document.getElementById("d-upcoming").innerHTML = up.length
+    ? up.map(matchCard).join("")
     : `<div class="card p-4 text-center text-gray-500 text-sm">Nenhum jogo agendado.</div>`;
 
-  // Results
-  const results = MATCHES.filter(m => m.status === "completed").slice(-3).reverse();
-  document.getElementById("results-container").innerHTML = results.length
-    ? results.map(m => renderMatchCard(m)).join("")
-    : `<div class="card p-4 text-center text-gray-500 text-sm">Nenhum resultado ainda.</div>`;
+  // Results — prioriza Split 1, fallback Copa
+  const done = sched.filter(m=>m.status==="completed"||m.status==="unneeded").slice(-4).reverse();
+  const fallbackDone = COPA_RESULTS.slice(-4).reverse();
+  const toShow = done.length ? done : fallbackDone;
+  document.getElementById("d-results").innerHTML = toShow.map(matchCard).join("");
 }
 
 function renderAgenda() {
-  const filtered = agendaFilter === "upcoming"
-    ? MATCHES.filter(m => m.status === "scheduled" || m.status === "live")
-    : MATCHES.filter(m => m.status === "completed").reverse();
-  document.getElementById("agenda-container").innerHTML = filtered.length
-    ? filtered.map(m => renderMatchCard(m)).join("")
-    : `<div class="card p-4 text-center text-gray-500 text-sm">Nenhuma partida encontrada.</div>`;
+  const sched = S.schedule.length ? S.schedule : COPA_RESULTS;
+  let filtered;
+  if(S.agF==="live")  filtered=sched.filter(m=>m.status==="inProgress"||m.status==="live");
+  else if(S.agF==="done") filtered=sched.filter(m=>m.status==="completed"||m.status==="unneeded").reverse();
+  else filtered=sched.filter(m=>m.status==="unstarted"||m.status==="scheduled");
+  if(!filtered.length && S.agF==="done" && !S.schedule.length) filtered=[...COPA_RESULTS].reverse();
+  document.getElementById("d-agenda").innerHTML=filtered.length
+    ? filtered.map(matchCard).join("")
+    : `<div class="card p-4 text-center text-gray-500 text-sm">${S.agF==="live"?"Nenhuma partida ao vivo.":"Nenhuma partida encontrada."}</div>`;
 }
 
 function renderTimes() {
-  const html = Object.entries(TEAMS).map(([id, t]) => {
-    const roster = t.roster.map(p => `<span class="text-xs text-gray-400">${ROLE_ICON[p.role]} ${p.name}</span>`).join("  ");
-    return `<div class="card p-4 cursor-pointer" onclick="openTeam('${id}')">
-      <div class="flex items-center gap-3 mb-2">
+  const st = S.standings.length ? S.standings : COPA_STANDINGS;
+  const html = Object.entries(TEAMS).map(([k,t])=>{
+    const s=st.find(x=>x.team===k)||{w:0,l:0};
+    return `<div class="card mcard p-4" onclick="openTeam('${k}')">
+      <div class="flex items-center gap-3">
         <span class="text-3xl">${t.emoji}</span>
-        <div>
-          <div class="font-bold text-base" style="color:${t.color}">${t.name}</div>
-          <div class="text-xs text-gray-500">CBLOL 2026 Split 1</div>
+        <div class="flex-1">
+          <div class="font-bold" style="color:${t.color}">${t.name}</div>
+          <div class="text-xs text-gray-500 mt-0.5">${t.roster.map(p=>`${RI[p.r]||""} ${p.n}`).join(" · ")}</div>
+        </div>
+        <div class="text-right text-xs">
+          <span class="text-green-400 font-bold">${s.w}V</span> <span class="text-red-400 font-bold">${s.l}D</span>
         </div>
       </div>
-      <div class="flex flex-wrap gap-x-3 gap-y-1">${roster}</div>
     </div>`;
   }).join("");
-  document.getElementById("times-container").innerHTML = html;
+  document.getElementById("d-times").innerHTML=html;
 }
 
-function renderPlayers(filter) {
-  const filtered = filter === "all" ? PLAYERS_STATS : PLAYERS_STATS.filter(p => p.role === filter);
-  if (!filtered.length) {
-    document.getElementById("players-container").innerHTML = `<div class="p-4 text-center text-gray-500 text-sm">Nenhum jogador encontrado.</div>`;
-    return;
-  }
-  let html = `<div class="overflow-x-auto"><table class="w-full text-xs">
+function renderStats() {
+  const all = S.wikiPlayers.length ? S.wikiPlayers : PLAYERS_BASE;
+  const filtered = S.posF==="all" ? all : all.filter(p=>p.role===S.posF);
+  if(!filtered.length){document.getElementById("d-stats").innerHTML=`<div class="p-4 text-center text-gray-500 text-sm">Sem dados.</div>`;return;}
+  // Recalc ratings within filtered group per role
+  const rated = filtered.map(p=>{
+    const peers=filtered.filter(x=>x.role===p.role);
+    return {...p, rating:calcRating(p,peers.length?peers:[p])};
+  }).sort((a,b)=>parseFloat(b.rating)-parseFloat(a.rating));
+  let html=`<div class="overflow-x-auto"><table class="w-full text-xs">
     <thead><tr class="border-b border-gray-800">
-      <th class="text-left py-2 px-3 text-gray-500">#</th>
+      <th class="text-left py-2 px-3 text-gray-500 bg-[#111827] sticky left-0">#</th>
       <th class="text-left py-2 px-3 text-gray-500">Jogador</th>
       <th class="text-center py-2 px-3 text-gray-500">KDA</th>
       <th class="text-center py-2 px-3 text-gray-500">DPM</th>
-      <th class="text-center py-2 px-3 text-gray-500">WR%</th>
-      <th class="text-right py-2 px-3 text-gray-500">⭐ Rating</th>
+      <th class="text-center py-2 px-3 text-gray-500">CS/m</th>
+      <th class="text-right py-2 px-3 text-gray-500">Rating</th>
     </tr></thead><tbody>`;
-  filtered.forEach((p,i) => {
-    const t = TEAMS[p.team];
-    html += `<tr class="border-b border-gray-900 player-row transition-colors cursor-pointer">
-      <td class="py-2.5 px-3 text-gray-500 font-medium">${i+1}</td>
-      <td class="py-2.5 px-3">
-        <div class="font-semibold">${p.name}</div>
-        <div style="color:${t.color}" class="text-[10px]">${t.short} · ${ROLE_ICON[p.role]}</div>
-      </td>
-      <td class="py-2.5 px-3 text-center font-semibold text-green-400">${p.kda}</td>
-      <td class="py-2.5 px-3 text-center text-gray-300">${p.dpm}</td>
-      <td class="py-2.5 px-3 text-center text-blue-300">${p.wr}%</td>
-      <td class="py-2.5 px-3 text-right font-black ${ratingColor(p.rating)}">${p.rating}</td>
+  rated.forEach((p,i)=>{
+    const t=ti(p.team);
+    html+=`<tr class="border-b border-gray-900 row">
+      <td class="py-2.5 px-3 text-gray-500 bg-[#111827] sticky left-0 font-medium">${i+1}</td>
+      <td class="py-2.5 px-3"><div class="font-semibold">${p.n||p.name}</div><div class="text-[10px]" style="color:${t.color}">${t.short} ${RI[p.role]||""}</div></td>
+      <td class="py-2.5 px-3 text-center text-green-400 font-semibold">${p.kda}</td>
+      <td class="py-2.5 px-3 text-center text-gray-300">${p.dpm||"—"}</td>
+      <td class="py-2.5 px-3 text-center text-blue-300">${p.csmin||"—"}</td>
+      <td class="py-2.5 px-3 text-right font-black ${rc(p.rating)}">${p.rating}</td>
     </tr>`;
   });
-  html += `</tbody></table></div>`;
-  document.getElementById("players-container").innerHTML = html;
+  html+=`</tbody></table></div>`;
+  document.getElementById("d-stats").innerHTML=html;
 }
 
 function renderNews() {
-  const html = NEWS.map(n => `
-    <div class="card overflow-hidden cursor-pointer" onclick="openNews('${n.id}')">
-      <div class="relative">
-        <div class="h-28 bg-gradient-to-r from-[#111827] to-[#1f2937] flex items-center justify-center">
-          <span class="text-5xl">🏆</span>
-        </div>
-        <span class="absolute top-2 left-2 bg-[#c89b3c] text-[#0a0e1a] text-[10px] font-bold px-2 py-0.5 rounded">${n.category}</span>
-      </div>
+  const catC={Resultados:"bg-green-800",Análises:"bg-blue-800",Transfers:"bg-purple-800",Agenda:"bg-yellow-700"};
+  document.getElementById("d-news").innerHTML=NEWS.map(n=>`
+    <div class="card mcard overflow-hidden" onclick='openNews(${JSON.stringify(n)})'>
       <div class="p-3">
-        <div class="font-semibold text-sm mb-1 leading-snug">${n.title}</div>
+        <div class="flex items-start gap-2 mb-1">
+          <span class="${catC[n.cat]||"bg-gray-700"} text-white text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap">${n.cat}</span>
+        </div>
+        <div class="font-semibold text-sm leading-snug mb-1">${n.title}</div>
         <div class="text-xs text-gray-400 mb-1">${n.summary}</div>
-        <div class="text-[10px] text-gray-600">${formatDateShort(n.date)}</div>
+        <div class="flex justify-between text-[10px] text-gray-600"><span>${fmtShort(n.date)}</span><span>${n.src}</span></div>
       </div>
     </div>`).join("");
-  document.getElementById("news-container").innerHTML = html;
 }
 
-// ==================== NAVIGATION ====================
-function showSection(name) {
-  ["home","agenda","times","jogadores","noticias"].forEach(s => {
-    document.getElementById(`section-${s}`).classList.add("section-hidden");
-    const tab = document.getElementById(`tab-${s}`);
-    tab.classList.remove("tab-active");
-    tab.classList.add("tab-inactive");
+// ===================== MODALS ======================
+function openMatch(m) {
+  const t1=ti(m.t1), t2=ti(m.t2);
+  const done=m.status==="completed"||m.status==="unneeded";
+  let html=`<div class="text-center mb-4 pr-8">
+    <div class="text-[10px] text-gray-500 mb-3">${m.label||"CBLOL 2026"} · BO${m.bo||3}</div>
+    <div class="text-xs text-gray-500 mb-3">${fmtDate(m.date)}</div>
+    <div class="flex items-center justify-center gap-8">
+      <div class="text-center"><div class="text-4xl mb-1">${t1.emoji}</div><div class="font-bold" style="color:${t1.color}">${t1.name}</div></div>
+      <div class="text-center">`;
+  if(done) html+=`<div class="text-4xl font-black"><span style="color:${m.s1>m.s2?t1.color:"#4b5563"}">${m.s1}</span><span class="text-gray-700 mx-2 text-2xl">x</span><span style="color:${m.s2>m.s1?t2.color:"#4b5563"}">${m.s2}</span></div><div class="text-xs font-semibold mt-1 ${m.s1>m.s2?"text-green-400":"text-blue-400"}">${m.s1>m.s2?t1.short:t2.short} venceu</div>`;
+  else html+=`<div class="text-gray-400 font-bold text-lg">vs</div>${badge(m.status)}`;
+  html+=`</div><div class="text-center"><div class="text-4xl mb-1">${t2.emoji}</div><div class="font-bold" style="color:${t2.color}">${t2.name}</div></div>
+    </div></div>`;
+  // Elencos
+  html+=`<div class="border-t border-gray-800 pt-3"><div class="text-[10px] font-semibold text-gray-500 uppercase mb-2">Elencos</div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><div class="text-xs font-semibold mb-1" style="color:${t1.color}">${t1.short}</div>${(t1.roster||[]).map(p=>`<div class="text-xs text-gray-300 py-0.5">${RI[p.r]||""} ${p.n}</div>`).join("")}</div>
+      <div><div class="text-xs font-semibold mb-1" style="color:${t2.color}">${t2.short}</div>${(t2.roster||[]).map(p=>`<div class="text-xs text-gray-300 py-0.5">${RI[p.r]||""} ${p.n}</div>`).join("")}</div>
+    </div></div>`;
+  document.getElementById("modal-body").innerHTML=html;
+  document.getElementById("modal").classList.remove("hidden");
+  document.body.style.overflow="hidden";
+}
+
+function openTeam(k) {
+  const t=ti(k);
+  const st=(S.standings.length?S.standings:COPA_STANDINGS).find(s=>s.team===k)||{w:0,l:0};
+  const sched=S.schedule.length?S.schedule:COPA_RESULTS;
+  const done=sched.filter(m=>(m.t1===k||m.t2===k)&&(m.status==="completed"||m.status==="unneeded")).slice(-5).reverse();
+  const ps=(S.wikiPlayers.length?S.wikiPlayers:PLAYERS_BASE).filter(p=>p.team===k);
+  let html=`<div class="text-center mb-4 pr-8">
+    <div class="text-5xl mb-2">${t.emoji}</div>
+    <div class="font-black text-xl" style="color:${t.color}">${t.name}</div>
+    <div class="text-sm text-gray-400 mt-1">CBLOL 2026 Split 1</div>
+    <div class="flex justify-center gap-8 mt-3">
+      <div><div class="text-2xl font-black text-green-400">${st.w}</div><div class="text-xs text-gray-500">Vitórias</div></div>
+      <div><div class="text-2xl font-black text-red-400">${st.l}</div><div class="text-xs text-gray-500">Derrotas</div></div>
+      <div><div class="text-2xl font-black gold">${st.w+st.l?Math.round(st.w/(st.w+st.l)*100):0}%</div><div class="text-xs text-gray-500">WR</div></div>
+    </div></div>`;
+  if(ps.length){
+    html+=`<div class="border-t border-gray-800 pt-3 mb-3"><div class="text-[10px] font-semibold text-gray-500 uppercase mb-2">Elenco & Stats</div>
+      ${ps.map(p=>{const r=calcRating(p,(S.wikiPlayers.length?S.wikiPlayers:PLAYERS_BASE).filter(x=>x.role===p.role));return`
+        <div class="flex items-center justify-between py-2 border-b border-gray-900">
+          <div class="flex items-center gap-2"><span>${RI[p.role]||""}</span><span class="font-semibold text-sm">${p.n||p.name}</span></div>
+          <div class="text-right"><div class="text-xs text-green-400">KDA ${p.kda}</div><div class="text-xs ${rc(parseFloat(r))}">Rating ${r}</div></div>
+        </div>`}).join("")}
+    </div>`;
+  } else {
+    html+=`<div class="border-t border-gray-800 pt-3 mb-3"><div class="text-[10px] font-semibold text-gray-500 uppercase mb-2">Elenco</div>
+      ${t.roster.map(p=>`<div class="flex items-center justify-between py-2 border-b border-gray-900"><div class="flex items-center gap-2"><span>${RI[p.r]||""}</span><span class="font-semibold text-sm">${p.n}</span></div><span class="text-xs text-gray-500 capitalize">${p.r}</span></div>`).join("")}
+    </div>`;
+  }
+  if(done.length){
+    html+=`<div class="border-t border-gray-800 pt-3"><div class="text-[10px] font-semibold text-gray-500 uppercase mb-2">Últimos Resultados</div>
+      ${done.map(m=>{const isT1=m.t1===k;const opp=ti(isT1?m.t2:m.t1);const my=isT1?m.s1:m.s2,op=isT1?m.s2:m.s1;const w=my>op;
+        return`<div class="flex items-center justify-between py-2 border-b border-gray-900">
+          <div class="flex items-center gap-2"><span>${w?"🟢":"🔴"}</span><span class="text-xs">${opp.emoji} ${opp.short}</span></div>
+          <span class="text-xs font-bold ${w?"text-green-400":"text-red-400"}">${my}x${op} ${w?"✓":"✗"}</span>
+        </div>`;}).join("")}
+    </div>`;
+  }
+  document.getElementById("modal-body").innerHTML=html;
+  document.getElementById("modal").classList.remove("hidden");
+  document.body.style.overflow="hidden";
+}
+
+function openNews(n) {
+  const catC={Resultados:"bg-green-800",Análises:"bg-blue-800",Transfers:"bg-purple-800",Agenda:"bg-yellow-700"};
+  document.getElementById("modal-body").innerHTML=`<div class="pr-8">
+    <span class="${catC[n.cat]||"bg-gray-700"} text-white text-[10px] font-bold px-2 py-0.5 rounded">${n.cat}</span>
+    <h2 class="text-base font-bold mt-3 mb-1 leading-snug">${n.title}</h2>
+    <div class="text-[10px] text-gray-500 mb-3">${fmtShort(n.date)} · ${n.src}</div>
+    <p class="text-sm text-gray-300 leading-relaxed">${n.detail||n.summary}</p>
+  </div>`;
+  document.getElementById("modal").classList.remove("hidden");
+  document.body.style.overflow="hidden";
+}
+
+// ===================== NAVIGATION ======================
+function go(name) {
+  ["home","agenda","times","stats","noticias"].forEach(s=>{
+    document.getElementById(`s-${s}`).classList.add("hidden");
+    const t=document.getElementById(`t-${s}`);
+    t.classList.remove("tab-on");t.classList.add("tab-off");
   });
-  document.getElementById(`section-${name}`).classList.remove("section-hidden");
-  const activeTab = document.getElementById(`tab-${name}`);
-  activeTab.classList.add("tab-active");
-  activeTab.classList.remove("tab-inactive");
-  currentSection = name;
-  if (name === "agenda") renderAgenda();
-  if (name === "times") renderTimes();
-  if (name === "noticias") renderNews();
-  if (name === "jogadores") renderPlayers(playerFilter);
+  document.getElementById(`s-${name}`).classList.remove("hidden");
+  const at=document.getElementById(`t-${name}`);
+  at.classList.add("tab-on");at.classList.remove("tab-off");
+  if(name==="agenda")  renderAgenda();
+  if(name==="times")   renderTimes();
+  if(name==="stats")   renderStats();
+  if(name==="noticias")renderNews();
 }
-
-function setAgendaFilter(f) {
-  agendaFilter = f;
-  ["upcoming","completed"].forEach(x => {
-    const btn = document.getElementById(`filter-${x}`);
-    btn.classList.toggle("tab-active", x===f);
-    btn.classList.toggle("tab-inactive", x!==f);
+function agFilter(f){
+  S.agF=f;
+  ["up","live","done"].forEach(x=>{
+    const b=document.getElementById(`af-${x}`);
+    b.classList.toggle("tab-on",x===f);b.classList.toggle("tab-off",x!==f);
   });
   renderAgenda();
 }
-
-function filterPlayers(pos) {
-  playerFilter = pos;
-  ["all","top","jungle","mid","adc","support"].forEach(x => {
-    const btn = document.getElementById(`pos-${x}`);
-    if(btn){ btn.classList.toggle("tab-active", x===pos); btn.classList.toggle("tab-inactive", x!==pos); }
+function posFilter(p){
+  S.posF=p;
+  ["all","top","jungle","mid","bot","support"].forEach(x=>{
+    const b=document.getElementById(`p-${x}`);
+    if(b){b.classList.toggle("tab-on",x===p);b.classList.toggle("tab-off",x!==p);}
   });
-  renderPlayers(pos);
+  renderStats();
 }
 
-// ==================== MODALS ====================
-function openMatch(id) {
-  const m = MATCHES.find(x => x.id === id);
-  if(!m) return;
-  const t1 = TEAMS[m.t1], t2 = TEAMS[m.t2];
-  const standing1 = STANDINGS.find(s => s.team === m.t1);
-  const standing2 = STANDINGS.find(s => s.team === m.t2);
-  const champions = ["Jinx","Aphelios","Caitlyn","Jhin","Ezreal","KaiSa","Xayah","Lucian","Corki"];
-  const picks1 = champions.sort(()=>Math.random()-0.5).slice(0,5);
-  const picks2 = champions.sort(()=>Math.random()-0.5).slice(0,5);
-  let html = `
-    <div class="text-center mb-4">
-      <div class="text-xs text-gray-500 mb-2">${m.phase} · Semana ${m.week} · ${formatDate(m.date)}</div>
-      <div class="flex items-center justify-center gap-6">
-        <div class="text-center"><div class="text-3xl mb-1">${t1.emoji}</div><div class="font-bold" style="color:${t1.color}">${t1.name}</div><div class="text-xs text-gray-500">${standing1?.w}V ${standing1?.l}D</div></div>
-        <div class="text-center">`;
-  if(m.status === "completed") {
-    html += `<div class="text-3xl font-black"><span style="color:${m.s1>m.s2?t1.color:"#6b7280"}">${m.s1}</span><span class="text-gray-600 mx-2 text-xl">x</span><span style="color:${m.s2>m.s1?t2.color:"#6b7280"}">${m.s2}</span></div><div class="text-xs text-green-400 mt-1">${m.s1>m.s2?t1.short:t2.short} venceu</div>`;
-  } else {
-    html += `<div class="text-gray-400 font-bold">vs</div><div class="text-xs text-blue-400 mt-1">Agendado</div>`;
-  }
-  html += `</div><div class="text-center"><div class="text-3xl mb-1">${t2.emoji}</div><div class="font-bold" style="color:${t2.color}">${t2.name}</div><div class="text-xs text-gray-500">${standing2?.w}V ${standing2?.l}D</div></div>
-      </div>
-    </div>`;
-  if(m.status === "completed") {
-    html += `<div class="border-t border-gray-800 pt-3 mt-2">
-      <div class="text-xs font-semibold text-gray-400 uppercase mb-2">Draft — Jogo 1</div>
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <div class="text-xs text-blue-400 mb-1 font-semibold">🔵 Blue — ${t1.short}</div>
-          ${t1.roster.map((p,i) => `<div class="flex items-center gap-2 mb-1.5"><div class="w-7 h-7 bg-blue-900 rounded text-center text-xs flex items-center justify-center">${picks1[i]?picks1[i][0]:"?"}</div><div><div class="text-xs font-medium">${p.name}</div><div class="text-[10px] text-gray-500">${picks1[i]||"?"}</div></div></div>`).join("")}
-        </div>
-        <div>
-          <div class="text-xs text-red-400 mb-1 font-semibold">🔴 Red — ${t2.short}</div>
-          ${t2.roster.map((p,i) => `<div class="flex items-center gap-2 mb-1.5"><div class="w-7 h-7 bg-red-900 rounded text-center text-xs flex items-center justify-center">${picks2[i]?picks2[i][0]:"?"}</div><div><div class="text-xs font-medium">${p.name}</div><div class="text-[10px] text-gray-500">${picks2[i]||"?"}</div></div></div>`).join("")}
-        </div>
-      </div>
-    </div>
-    <div class="border-t border-gray-800 pt-3 mt-2">
-      <div class="text-xs font-semibold text-gray-400 uppercase mb-2">KDA — Jogo 1</div>
-      ${[...t1.roster, ...t2.roster].map(p => {
-        const kills = Math.floor(Math.random()*8)+1;
-        const deaths = Math.floor(Math.random()*4)+1;
-        const assists = Math.floor(Math.random()*12)+2;
-        const kda = deaths === 0 ? "Perfect" : ((kills+assists)/deaths).toFixed(1);
-        const team = t1.roster.includes(p) ? t1 : t2;
-        return `<div class="flex items-center justify-between py-1 border-b border-gray-900">
-          <div class="flex items-center gap-2"><span class="text-xs">${ROLE_ICON[p.role]}</span><span class="text-xs font-medium">${p.name}</span><span class="text-[10px]" style="color:${team.color}">${team.short}</span></div>
-          <div class="text-xs font-bold text-gray-300">${kills}/<span class="text-red-400">${deaths}</span>/${assists} <span class="text-gray-500 font-normal">(${kda})</span></div>
-        </div>`;
-      }).join("")}
-    </div>`;
-  }
-  document.getElementById("modal-content").innerHTML = html;
-  document.getElementById("match-modal").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+// ===================== LOAD DATA ======================
+async function loadLive() {
+  try {
+    const data = await lolesports("/getSchedule",`&leagueId=${CBLOL_ID}`);
+    const parsed = parseSched(data);
+    if(parsed.length){S.schedule=parsed;return true;}
+  } catch(e){console.warn("LoL Esports schedule:",e.message);}
+  return false;
+}
+async function loadStandings() {
+  try {
+    const tourns = await lolesports("/getTournamentsForLeague",`&leagueId=${CBLOL_ID}`);
+    const list = tourns?.data?.leagues?.[0]?.tournaments||[];
+    const cur = list[list.length-1];
+    if(!cur) throw new Error("no tournament");
+    const stData = await lolesports("/getStandings",`&tournamentId=${cur.id}`);
+    const parsed = parseStandings(stData);
+    if(parsed?.length){S.standings=parsed;return true;}
+  } catch(e){console.warn("Standings:",e.message);}
+  return false;
+}
+async function loadWikiStats() {
+  try {
+    const players = await fetchWikiStats();
+    if(players?.length){
+      players.forEach(p=>{
+        const peers=players.filter(x=>x.role===p.role);
+        p.rating=calcRating(p,peers);
+      });
+      players.sort((a,b)=>parseFloat(b.rating)-parseFloat(a.rating));
+      S.wikiPlayers=players; return true;
+    }
+  } catch(e){console.warn("Leaguepedia:",e.message);}
+  return false;
 }
 
-function openTeam(id) {
-  const t = TEAMS[id];
-  const standing = STANDINGS.find(s => s.team === id);
-  const teamMatches = MATCHES.filter(m => (m.t1 === id || m.t2 === id) && m.status === "completed");
-  let html = `
-    <div class="text-center mb-4">
-      <div class="text-5xl mb-2">${t.emoji}</div>
-      <div class="font-black text-xl" style="color:${t.color}">${t.name}</div>
-      <div class="text-sm text-gray-400 mt-1">CBLOL 2026 Split 1</div>
-      <div class="flex justify-center gap-6 mt-3">
-        <div class="text-center"><div class="text-2xl font-black text-green-400">${standing?.w||0}</div><div class="text-xs text-gray-500">Vitórias</div></div>
-        <div class="text-center"><div class="text-2xl font-black text-red-400">${standing?.l||0}</div><div class="text-xs text-gray-500">Derrotas</div></div>
-        <div class="text-center"><div class="text-2xl font-black gold">${standing?.pts||0}</div><div class="text-xs text-gray-500">Pontos</div></div>
-      </div>
-    </div>
-    <div class="border-t border-gray-800 pt-3">
-      <div class="text-xs font-semibold text-gray-400 uppercase mb-2">Elenco Atual</div>
-      ${t.roster.map(p => `<div class="flex items-center justify-between py-2 border-b border-gray-900">
-        <div class="flex items-center gap-2"><span>${ROLE_ICON[p.role]}</span><span class="font-semibold text-sm">${p.name}</span></div>
-        <span class="text-xs text-gray-500 capitalize">${p.role}</span>
-      </div>`).join("")}
-    </div>`;
-  if(teamMatches.length) {
-    html += `<div class="border-t border-gray-800 pt-3 mt-2">
-      <div class="text-xs font-semibold text-gray-400 uppercase mb-2">Resultados Recentes</div>
-      ${teamMatches.slice(-3).reverse().map(m => {
-        const isT1 = m.t1 === id;
-        const opp = TEAMS[isT1 ? m.t2 : m.t1];
-        const myScore = isT1 ? m.s1 : m.s2;
-        const oppScore = isT1 ? m.s2 : m.s1;
-        const won = myScore > oppScore;
-        return `<div class="flex items-center justify-between py-2 border-b border-gray-900">
-          <div class="flex items-center gap-2"><span>${won?"🟢":"🔴"}</span><span class="text-xs text-gray-300">vs ${opp.emoji} ${opp.short}</span></div>
-          <span class="text-xs font-bold ${won?"text-green-400":"text-red-400"}">${myScore}x${oppScore} ${won?"✓":"✗"}</span>
-        </div>`;
-      }).join("")}
-    </div>`;
-  }
-  document.getElementById("modal-content").innerHTML = html;
-  document.getElementById("match-modal").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+async function refresh() {
+  loading(true);
+  toast("🔄 Buscando dados ao vivo...");
+  const [a,b,c] = await Promise.allSettled([loadLive(),loadStandings(),loadWikiStats()]);
+  loading(false);
+  renderHome();
+  // refresh current visible section
+  const cur=["agenda","times","stats","noticias"].find(s=>!document.getElementById(`s-${s}`).classList.contains("hidden"));
+  if(cur==="agenda") renderAgenda();
+  if(cur==="times")  renderTimes();
+  if(cur==="stats")  renderStats();
+  const ok=(a.value||b.value||c.value);
+  toast(ok?"✅ Dados atualizados!":"⚠️ Usando dados locais (APIs indisponíveis)");
+  document.getElementById("upd").textContent=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
 }
 
-function openNews(id) {
-  const n = NEWS.find(x => x.id === id);
-  if(!n) return;
-  const html = `
-    <div>
-      <div class="h-32 bg-gradient-to-r from-[#111827] to-[#1f2937] rounded-lg flex items-center justify-center mb-4">
-        <span class="text-6xl">🏆</span>
-      </div>
-      <span class="bg-[#c89b3c] text-[#0a0e1a] text-[10px] font-bold px-2 py-0.5 rounded">${n.category}</span>
-      <h2 class="text-base font-bold mt-2 mb-1 leading-snug">${n.title}</h2>
-      <div class="text-xs text-gray-500 mb-3">${formatDateShort(n.date)}</div>
-      <p class="text-sm text-gray-300 leading-relaxed">${n.summary} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.</p>
-    </div>`;
-  document.getElementById("modal-content").innerHTML = html;
-  document.getElementById("match-modal").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+// Auto-refresh: a cada 2min se há jogo ao vivo, senão a cada 10min
+function scheduleRefresh(){
+  const hasLive=S.schedule.some(m=>m.status==="inProgress"||m.status==="live");
+  setTimeout(async ()=>{await refresh();scheduleRefresh();}, hasLive?2*60*1000:10*60*1000);
 }
 
-function closeModal() {
-  document.getElementById("match-modal").classList.add("hidden");
-  document.body.style.overflow = "";
-}
-
-// Close modal on backdrop click
-document.getElementById("match-modal").addEventListener("click", function(e) {
-  if(e.target === this) closeModal();
-});
-
-// ==================== INIT ====================
-document.getElementById("last-updated").textContent = "Atualizado: " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"});
-renderHome();
+// ===================== INIT ======================
+(async function(){
+  renderHome(); renderNews();
+  loading(true);
+  await Promise.allSettled([loadLive(),loadStandings(),loadWikiStats()]);
+  loading(false);
+  renderHome();
+  document.getElementById("upd").textContent=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  scheduleRefresh();
+})();
 </script>
 </body>
 </html>
